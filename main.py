@@ -12,6 +12,7 @@ MakeMyTrip Hotel Booking Automation with Google Sheets + ScrapingBee
 import time
 import os
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -23,6 +24,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, StaleElementReferenceException
 from webdriver_manager.chrome import ChromeDriverManager
+
+# Load environment variables from .env file
+load_dotenv()
 
 # =========================================================
 # GOOGLE SHEETS MANAGER
@@ -346,8 +350,8 @@ class Config:
     GUEST_MOBILE = None
     UPI_ID = None
     
-    # ScrapingBee settings
-    SCRAPINGBEE_API_KEY = "DGQFC4ZP3878C8JELQUSU13RDUNV2JBUVPIHPC20SGDFR3LEQK73G39W8L6KTY051KCYS65D49WC27O3"
+    # ScrapingBee settings (loaded from .env)
+    SCRAPINGBEE_API_KEY = os.getenv("SCRAPINGBEE_API_KEY", "")
     SCRAPINGBEE_PREMIUM = True
     SCRAPINGBEE_COUNTRY = "in"
     SCRAPINGBEE_RENDER_JS = True
@@ -1370,16 +1374,26 @@ def process_single_booking(booking_data, driver, hotel_page, booking_page):
 # =========================================================
 
 def main():
+    print("\n" + "="*70)
+    print(" MAKEMYTRIP AUTOMATION - GOOGLE SHEETS + SCRAPINGBEE")
+    print(" Automated Bulk Booking with India Premium Proxies")
+    print(" ✨ 15s Payment Wait | Booking ID | Price | Auto Status Update")
+    print("="*70 + "\n")
     
     # Get Google Sheet URL
     print("--- GOOGLE SHEET CONFIGURATION ---")
-    default_url = "https://docs.google.com/spreadsheets/d/1b7_nzGck9g3Mpvurwc1RV34nnMixJFHW5evMMjtlaUQ/edit?usp=sharing"
-    print(f"Default sheet: {default_url[:60]}...")
-    sheet_url = input(f"\nEnter Google Sheet URL (or press Enter to use default): ").strip()
-    
-    if not sheet_url or sheet_url.lower() in ['yes', 'y', 'default']:
-        sheet_url = default_url
-        print(f"✓ Using default sheet")
+    default_url = os.getenv("SHEET_URL", "")
+    if default_url:
+        print(f"Default sheet (from .env): {default_url[:60]}...")
+    sheet_url = input(f"\nEnter Google Sheet URL (or press Enter to use .env default): ").strip()
+
+    if not sheet_url:
+        if default_url:
+            sheet_url = default_url
+            print(f"✓ Using sheet from .env")
+        else:
+            print("❌ No sheet URL provided and SHEET_URL not set in .env")
+            return
     
     Config.SHEET_URL = sheet_url
     
@@ -1486,7 +1500,7 @@ def main():
             'status': status
         })
         
-        # Wait between bookings - automatically proceed after 10 second wait
+        # Wait between bookings - automatically proceed after 90 second wait
         if i < len(bookings):
             print(f"\n⏳ Waiting 10 seconds before next booking...")
             time.sleep(10)
